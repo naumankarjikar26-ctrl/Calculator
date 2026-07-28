@@ -340,6 +340,8 @@
   function updateDisplay(){
     currentEl.textContent = expr === '' ? '0' : prettyExpr(expr);
     historyEl.textContent = lastResult !== null && justEvaluated ? '\u00a0' : (historyEl.dataset.hist || '\u00a0');
+    currentEl.scrollLeft = currentEl.scrollWidth;
+    historyEl.scrollLeft = historyEl.scrollWidth;
   }
 
   // ---------- input building ----------
