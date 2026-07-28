@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Calculator</title>
+<style>
+  :root{
+    --bg:#0d0d0d;
+    --panel:#161616;
+    --display:#1c1c1c;
+    --key:#2a2a2a;
+    --key-hover:#363636;
+    --key-op:#3a3a3a;
+    --key-op-hover:#474747;
+    --key-accent:#e8e8e8;
+    --key-accent-text:#0d0d0d;
+    --key-warn:#3a2626;
+    --key-warn-hover:#4a2f2f;
+    --text:#f2f2f2;
+    --text-dim:#8a8a8a;
+    --border:#2f2f2f;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    height:100%;
+    margin:0;
+    background:var(--bg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  .calc{
+    width:340px;
+    max-width:94vw;
+    background:var(--panel);
+    border-radius:28px;
+    padding:18px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px var(--border);
+  }
+  .top-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:4px 6px 10px;
+  }
+  .mode-toggle{
+    display:flex;
+    background:var(--key);
+    border-radius:20px;
+    padding:3px;
+    gap:2px;
+  }
+  .mode-toggle button{
+    border:none;
+    background:transparent;
+    color:var(--text-dim);
+    font-size:11px;
+    letter-spacing:0.5px;
+    padding:6px 12px;
+    border-radius:16px;
+    cursor:pointer;
+    transition:all 0.2s ease;
+  }
+  .mode-toggle button.active{
+    background:var(--key-accent);
+    color:var(--key-accent-text);
+    font-weight:600;
+  }
+  .deg-rad{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .deg-rad button{
+    border:none;
+    background:transparent;
+    color:var(--text-dim);
+    font-size:11px;
+    cursor:pointer;
+    padding:4px 6px;
+  }
+  .deg-rad button.active{
+    color:var(--text);
+    text-decoration:underline;
+  }
+  .display{
+    background:var(--display);
+    border-radius:18px;
+    padding:22px 18px 16px;
+    margin-bottom:14px;
+    min-height:100px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    overflow:hidden;
+  }
+  .history{
+    color:var(--text-dim);
+    font-size:14px;
+    min-height:18px;
+    text-align:right;
+    overflow-x:auto;
+    white-space:nowrap;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+  }
+  .history::-webkit-scrollbar{
+    display:none;
+  }
+  .current{
+    color:var(--text);
+    font-size:34px;
+    font-weight:300;
+    text-align:right;
+    word-break:break-all;
+    line-height:1.15;
+    margin-top:6px;
+    overflow-x:auto;
+    white-space:nowrap;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+  }
+  .current::-webkit-scrollbar{
+    display:none;
+  }
+  .pad{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:10px;
+  }
+  .pad.sci{
+    grid-template-columns:repeat(4, 1fr);
+    margin-bottom:10px;
+  }
+  button.key{
+    border:none;
+    outline:none;
+    border-radius:18px;
+    background:var(--key);
+    color:var(--text);
+    font-size:18px;
+    padding:16px 0;
+    cursor:pointer;
+    transition:background 0.15s ease, transform 0.05s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button.key:active{
+    transform:scale(0.94);
+  }
+  button.key:hover{
+    background:var(--key-hover);
+  }
+  button.key.sci-btn{
+    font-size:13px;
+    padding:12px 0;
+    color:var(--text-dim);
+    background:#212121;
+  }
+  button.key.sci-btn:hover{
+    background:#2b2b2b;
+    color:var(--text);
+  }
+  button.key.sci-btn.inv-on{
+    color:var(--text);
+    background:#2f2f2f;
+  }
+  button.key.op{
+    background:var(--key-op);
+    font-size:20px;
+  }
+  button.key.op:hover{
+    background:var(--key-op-hover);
+  }
+  button.key.func{
+    background:var(--key);
+    color:var(--text-dim);
+    font-size:16px;
+  }
+  button.key.warn{
+    background:var(--key-warn);
+    color:#e8b4b4;
+    font-size:15px;
+    letter-spacing:0.5px;
+  }
+  button.key.warn:hover{
+    background:var(--key-warn-hover);
+  }
+  button.key.accent{
+    background:var(--key-accent);
+    color:var(--key-accent-text);
+    font-weight:600;
+  }
+  button.key.accent:hover{
+    background:#ffffff;
+  }
+  button.key.span3{
+    grid-column:span 3;
+  }
+  .hidden{
+    display:none !important;
+  }
+</style>
+</head>
+<body>
+
+<div class="calc">
+  <div class="top-row">
+    <div class="mode-toggle">
+      <button id="modeBasic" class="active">BASIC</button>
+      <button id="modeSci">SCIENTIFIC</button>
+    </div>
+    <div class="deg-rad">
+      <button id="degBtn" class="active">DEG</button>
+      <button id="radBtn">RAD</button>
+    </div>
+  </div>
+
+  <div class="display">
+    <div class="history" id="history">&nbsp;</div>
+    <div class="current" id="current">0</div>
+  </div>
+
+  <div class="pad sci hidden" id="sciPad">
+    <button class="key sci-btn" data-action="inv" id="invBtn">inv</button>
+    <button class="key sci-btn" data-action="sin" id="sinBtn">sin</button>
+    <button class="key sci-btn" data-action="cos" id="cosBtn">cos</button>
+    <button class="key sci-btn" data-action="tan" id="tanBtn">tan</button>
+
+    <button class="key sci-btn" data-action="ln" id="lnBtn">ln</button>
+    <button class="key sci-btn" data-action="log" id="logBtn">log</button>
+    <button class="key sci-btn" data-action="factorial">x!</button>
+    <button class="key sci-btn" data-action="pow">x^y</button>
+
+    <button class="key sci-btn" data-action="pi">π</button>
+    <button class="key sci-btn" data-action="e">e</button>
+    <button class="key sci-btn" data-action="sqrt" id="sqrtBtn">√x</button>
+    <button class="key sci-btn" data-action="square">x²</button>
+  </div>
+
+  <div class="pad">
+    <button class="key warn" data-action="allclear">AC</button>
+    <button class="key func" data-action="lparen">(</button>
+    <button class="key func" data-action="rparen">)</button>
+    <button class="key func" data-action="backspace">⌫</button>
+
+    <button class="key" data-num="7">7</button>
+    <button class="key" data-num="8">8</button>
+    <button class="key" data-num="9">9</button>
+    <button class="key op" data-action="divide">÷</button>
+
+    <button class="key" data-num="4">4</button>
+    <button class="key" data-num="5">5</button>
+    <button class="key" data-num="6">6</button>
+    <button class="key op" data-action="multiply">×</button>
+
+    <button class="key" data-num="1">1</button>
+    <button class="key" data-num="2">2</button>
+    <button class="key" data-num="3">3</button>
+    <button class="key op" data-action="subtract">−</button>
+
+    <button class="key" data-action="sign">+/-</button>
+    <button class="key" data-num="0">0</button>
+    <button class="key" data-action="decimal">.</button>
+    <button class="key op" data-action="add">+</button>
+
+    <button class="key func" data-action="percent">%</button>
+    <button class="key accent span3" data-action="equals">=</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const currentEl = document.getElementById('current');
+  const historyEl = document.getElementById('history');
+  const sciPad = document.getElementById('sciPad');
+  const modeBasic = document.getElementById('modeBasic');
+  const modeSci = document.getElementById('modeSci');
+  const degBtn = document.getElementById('degBtn');
+  const radBtn = document.getElementById('radBtn');
+  const invBtn = document.getElementById('invBtn');
+
+  let expr = '';          // raw expression being built, e.g. "3+4*(2-1)"
+  let lastResult = null;  // last computed result, for chaining after "="
+  let justEvaluated = false;
+  let isDeg = true;
+  let invMode = false;
+
+  // ---------- mode toggles ----------
+  modeBasic.addEventListener('click', () => {
+    sciPad.classList.add('hidden');
+    modeBasic.classList.add('active');
+    modeSci.classList.remove('active');
+  });
+  modeSci.addEventListener('click', () => {
+    sciPad.classList.remove('hidden');
+    modeSci.classList.add('active');
+    modeBasic.classList.remove('active');
+  });
+  degBtn.addEventListener('click', () => {
+    isDeg = true;
+    degBtn.classList.add('active');
+    radBtn.classList.remove('active');
+  });
+  radBtn.addEventListener('click', () => {
+    isDeg = false;
+    radBtn.classList.add('active');
+    degBtn.classList.remove('active');
+  });
+
+  const invLabels = {
+    sinBtn: ['sin','asin'], cosBtn: ['cos','acos'], tanBtn: ['tan','atan'],
+    lnBtn: ['ln','exp'], logBtn: ['log','10^'], sqrtBtn: ['√x','x²']
+  };
+  function refreshInvLabels(){
+    Object.keys(invLabels).forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = invMode ? invLabels[id][1] : invLabels[id][0];
+      el.classList.toggle('inv-on', invMode);
+    });
+    invBtn.classList.toggle('inv-on', invMode);
+  }
+
+  // ---------- display ----------
+  function prettyExpr(str){
+    // build a display-friendly version without disturbing the raw token stream
+    return str
+      .replace(/\*/g, '×')
+      .replace(/\//g, '÷')
+      .replace(/-/g, '−')
+      .replace(/pi/g, 'π')
+      .replace(/\bsqrt\(/g, '√(')
+      .replace(/\btenpow\(/g, '10^(')
+      .replace(/\basin\(/g, 'sin⁻¹(')
+      .replace(/\bacos\(/g, 'cos⁻¹(')
+      .replace(/\batan\(/g, 'tan⁻¹(');
+  }
+
+  function updateDisplay(){
+    currentEl.textContent = expr === '' ? '0' : prettyExpr(expr);
+    historyEl.textContent = lastResult !== null && justEvaluated ? '\u00a0' : (historyEl.dataset.hist || '\u00a0');
+  }
+
+  // ---------- input building ----------
+  function lastChar(){
+    return expr.length ? expr[expr.length - 1] : '';
+  }
+  function endsWithNumber(){
+    return /[0-9)]$/.test(expr) || /(pi|e)$/.test(expr);
+  }
+  function endsWithOperator(){
+    return /[+\-*/^]$/.test(expr);
+  }
+
+  function inputDigit(d){
+    if (justEvaluated) { expr = ''; justEvaluated = false; }
+    expr += d;
+    updateDisplay();
+  }
+
+  function inputDecimal(){
+    if (justEvaluated) { expr = ''; justEvaluated = false; }
+    // find the current number segment (from the last operator/paren to the end)
+    const seg = expr.split(/[+\-*/^(]/).pop();
+    if (seg.includes('.')) return;
+    if (seg === '') expr += '0';
+    expr += '.';
+    updateDisplay();
+  }
+
+  function inputOperator(op){
+    if (justEvaluated) { justEvaluated = false; }
+    if (expr === '' && op !== '-') return; // can't start with * / ^ etc, minus is fine (negative)
+    if (endsWithOperator()) {
+      // replace trailing operator instead of stacking two
+      expr = expr.slice(0, -1) + op;
+    } else {
+      expr += op;
+    }
+    updateDisplay();
+  }
+
+  function inputParen(which){
+    if (justEvaluated) { expr = ''; justEvaluated = false; }
+    if (which === '(') {
+      if (endsWithNumber()) expr += '*(';
+      else expr += '(';
+    } else {
+      const opens = (expr.match(/\(/g) || []).length;
+      const closes = (expr.match(/\)/g) || []).length;
+      if (opens > closes && endsWithNumber()) expr += ')';
+    }
+    updateDisplay();
+  }
+
+  function inputFunc(name){
+    if (justEvaluated) { expr = ''; justEvaluated = false; }
+    if (endsWithNumber()) expr += '*';
+    expr += name + '(';
+    updateDisplay();
+  }
+
+  function inputConstant(sym){
+    if (justEvaluated) { expr = ''; justEvaluated = false; }
+    if (endsWithNumber()) expr += '*';
+    expr += sym;
+    updateDisplay();
+  }
+
+  function inputPostfix(sym){
+    // ! and % apply directly after a number or closing paren
+    if (justEvaluated) { justEvaluated = false; }
+    if (!endsWithNumber()) return;
+    expr += sym;
+    updateDisplay();
+  }
+
+  function backspace(){
+    if (justEvaluated) { expr = ''; justEvaluated = false; updateDisplay(); return; }
+    if (expr === '') return;
+    // remove one full function name if it ends with "name("
+    const funcMatch = expr.match(/(asin|acos|atan|tenpow|sqrt|sin|cos|tan|ln|log|exp)\($/);
+    if (funcMatch) {
+      expr = expr.slice(0, expr.length - funcMatch[0].length);
+    } else if (/pi$/.test(expr)) {
+      expr = expr.slice(0, -2);
+    } else {
+      expr = expr.slice(0, -1);
+    }
+    updateDisplay();
+  }
+
+  function allClear(){
+    expr = '';
+    lastResult = null;
+    justEvaluated = false;
+    historyEl.dataset.hist = '';
+    updateDisplay();
+  }
+
+  // ---------- tokenizer ----------
+  const FUNCS = ['asin','acos','atan','tenpow','sqrt','sin','cos','tan','ln','log','exp'];
+
+  function tokenize(str){
+    const tokens = [];
+    let i = 0;
+    while (i < str.length) {
+      const c = str[i];
+      if (c === ' ') { i++; continue; }
+
+      // functions
+      let matchedFunc = null;
+      for (const f of FUNCS) {
+        if (str.startsWith(f, i)) { matchedFunc = f; break; }
+      }
+      if (matchedFunc) {
+        tokens.push({type:'func', value: matchedFunc});
+        i += matchedFunc.length;
+        continue;
+      }
+      // constants
+      if (str.startsWith('pi', i)) {
+        tokens.push({type:'num', value: Math.PI});
+        i += 2;
+        continue;
+      }
+      if (c === 'e') {
+        tokens.push({type:'num', value: Math.E});
+        i += 1;
+        continue;
+      }
+      // numbers
+      if (/[0-9.]/.test(c)) {
+        let j = i;
+        while (j < str.length && /[0-9.]/.test(str[j])) j++;
+        tokens.push({type:'num', value: parseFloat(str.slice(i, j))});
+        i = j;
+        continue;
+      }
+      // operators / parens / postfix
+      if ('+-*/^()!%'.includes(c)) {
+        tokens.push({type:'op', value:c});
+        i++;
+        continue;
+      }
+      // unknown char, skip
+      i++;
+    }
+    return tokens;
+  }
+
+  // ---------- recursive-descent parser/evaluator ----------
+  function evaluate(tokens){
+    let pos = 0;
+
+    function peek(){ return tokens[pos]; }
+    function consume(){ return tokens[pos++]; }
+
+    function parseAddSub(){
+      let node = parseMulDiv();
+      while (peek() && peek().type === 'op' && (peek().value === '+' || peek().value === '-')) {
+        const op = consume().value;
+        const right = parseMulDiv();
+        node = op === '+' ? node + right : node - right;
+      }
+      return node;
+    }
+
+    function parseMulDiv(){
+      let node = parsePow();
+      while (peek() && peek().type === 'op' && (peek().value === '*' || peek().value === '/')) {
+        const op = consume().value;
+        const right = parsePow();
+        if (op === '*') node = node * right;
+        else {
+          if (right === 0) throw new Error('div0');
+          node = node / right;
+        }
+      }
+      return node;
+    }
+
+    function parsePow(){
+      const node = parseUnary();
+      if (peek() && peek().type === 'op' && peek().value === '^') {
+        consume();
+        const right = parsePow(); // right-associative
+        return Math.pow(node, right);
+      }
+      return node;
+    }
+
+    function parseUnary(){
+      if (peek() && peek().type === 'op' && peek().value === '-') {
+        consume();
+        return -parseUnary();
+      }
+      if (peek() && peek().type === 'op' && peek().value === '+') {
+        consume();
+        return parseUnary();
+      }
+      return parsePostfix();
+    }
+
+    function factorial(n){
+      if (n < 0 || Math.floor(n) !== n) return NaN;
+      if (n > 170) return Infinity;
+      let r = 1;
+      for (let k = 2; k <= n; k++) r *= k;
+      return r;
+    }
+
+    function parsePostfix(){
+      let node = parsePrimary();
+      while (peek() && peek().type === 'op' && (peek().value === '!' || peek().value === '%')) {
+        const op = consume().value;
+        node = op === '!' ? factorial(node) : node / 100;
+      }
+      return node;
+    }
+
+    function applyFunc(name, arg){
+      const toRad = v => isDeg ? v * Math.PI / 180 : v;
+      const fromRad = v => isDeg ? v * 180 / Math.PI : v;
+      switch(name){
+        case 'sin': return Math.sin(toRad(arg));
+        case 'cos': return Math.cos(toRad(arg));
+        case 'tan': return Math.tan(toRad(arg));
+        case 'asin': return fromRad(Math.asin(arg));
+        case 'acos': return fromRad(Math.acos(arg));
+        case 'atan': return fromRad(Math.atan(arg));
+        case 'ln': return Math.log(arg);
+        case 'log': return Math.log10(arg);
+        case 'exp': return Math.exp(arg);
+        case 'tenpow': return Math.pow(10, arg);
+        case 'sqrt': return Math.sqrt(arg);
+        default: throw new Error('badfunc');
+      }
+    }
+
+    function parsePrimary(){
+      const t = peek();
+      if (!t) throw new Error('unexpected end');
+      if (t.type === 'num') { consume(); return t.value; }
+      if (t.type === 'func') {
+        consume();
+        if (!peek() || peek().value !== '(') throw new Error('expected (');
+        consume();
+        const arg = parseAddSub();
+        if (!peek() || peek().value !== ')') throw new Error('expected )');
+        consume();
+        return applyFunc(t.value, arg);
+      }
+      if (t.type === 'op' && t.value === '(') {
+        consume();
+        const node = parseAddSub();
+        if (!peek() || peek().value !== ')') throw new Error('expected )');
+        consume();
+        return node;
+      }
+      throw new Error('unexpected token');
+    }
+
+    const result = parseAddSub();
+    if (pos !== tokens.length) throw new Error('trailing tokens');
+    return result;
+  }
+
+  function autoCloseParens(str){
+    const opens = (str.match(/\(/g) || []).length;
+    const closes = (str.match(/\)/g) || []).length;
+    return str + ')'.repeat(Math.max(0, opens - closes));
+  }
+
+  function doEquals(){
+    if (expr === '') return;
+    const toEval = autoCloseParens(expr);
+    try {
+      const tokens = tokenize(toEval);
+      const result = evaluate(tokens);
+      if (!isFinite(result)) throw new Error('bad result');
+      historyEl.dataset.hist = prettyExpr(toEval) + ' =';
+      const resStr = formatResult(result);
+      expr = resStr;
+      lastResult = resStr;
+      justEvaluated = true;
+      updateDisplay();
+    } catch (err) {
+      historyEl.dataset.hist = prettyExpr(toEval) + ' =';
+      expr = 'Error';
+      justEvaluated = true;
+      updateDisplay();
+    }
+  }
+
+  function formatResult(n){
+    if (Math.abs(n) > 1e15 || (Math.abs(n) < 1e-9 && n !== 0)) {
+      return n.toExponential(8).replace(/e([+-])/, 'e$1');
+    }
+    let s = Number(n.toPrecision(12)).toString();
+    return s;
+  }
+
+  // ---------- action dispatch ----------
+  function handleAction(action){
+    switch(action){
+      case 'allclear': allClear(); break;
+      case 'backspace': backspace(); break;
+      case 'decimal': inputDecimal(); break;
+      case 'sign': {
+        // toggle sign of the current trailing number segment
+        const m = expr.match(/(-?\d+\.?\d*)$/);
+        if (m) {
+          const numStr = m[1];
+          const start = expr.length - numStr.length;
+          const toggled = numStr.startsWith('-') ? numStr.slice(1) : '-' + numStr;
+          expr = expr.slice(0, start) + toggled;
+          updateDisplay();
+        }
+        break;
+      }
+      case 'lparen': inputParen('('); break;
+      case 'rparen': inputParen(')'); break;
+      case 'add': inputOperator('+'); break;
+      case 'subtract': inputOperator('-'); break;
+      case 'multiply': inputOperator('*'); break;
+      case 'divide': inputOperator('/'); break;
+      case 'pow': inputOperator('^'); break;
+      case 'percent': inputPostfix('%'); break;
+      case 'factorial': inputPostfix('!'); break;
+      case 'equals': doEquals(); break;
+
+      case 'sin': inputFunc(invMode ? 'asin' : 'sin'); break;
+      case 'cos': inputFunc(invMode ? 'acos' : 'cos'); break;
+      case 'tan': inputFunc(invMode ? 'atan' : 'tan'); break;
+      case 'ln': inputFunc(invMode ? 'exp' : 'ln'); break;
+      case 'log': inputFunc(invMode ? 'tenpow' : 'log'); break;
+      case 'sqrt': invMode ? inputPostfixPow2() : inputFunc('sqrt'); break;
+      case 'square': inputPostfixPow2(); break;
+      case 'pi': inputConstant('pi'); break;
+      case 'e': inputConstant('e'); break;
+      case 'inv':
+        invMode = !invMode;
+        refreshInvLabels();
+        break;
+    }
+  }
+
+  function inputPostfixPow2(){
+    // x² — wrap trailing number/paren-group in ^2 by appending ^2 (works since ^ is right-assoc and applies to preceding primary via postfix parse chain)
+    if (justEvaluated) { justEvaluated = false; }
+    if (!endsWithNumber()) return;
+    expr += '^2';
+    updateDisplay();
+  }
+
+  document.querySelectorAll('[data-num]').forEach(btn => {
+    btn.addEventListener('click', () => inputDigit(btn.dataset.num));
+  });
+  document.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => handleAction(btn.dataset.action));
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key >= '0' && e.key <= '9') inputDigit(e.key);
+    else if (e.key === '.') inputDecimal();
+    else if (e.key === '+') inputOperator('+');
+    else if (e.key === '-') inputOperator('-');
+    else if (e.key === '*') inputOperator('*');
+    else if (e.key === '/') { e.preventDefault(); inputOperator('/'); }
+    else if (e.key === '^') inputOperator('^');
+    else if (e.key === '(') inputParen('(');
+    else if (e.key === ')') inputParen(')');
+    else if (e.key === '%') inputPostfix('%');
+    else if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); doEquals(); }
+    else if (e.key === 'Escape') allClear();
+    else if (e.key === 'Backspace') backspace();
+  });
+
+  updateDisplay();
+})();
+</script>
+
+</body>
+</html>
