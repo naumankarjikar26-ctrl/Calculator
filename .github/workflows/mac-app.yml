@@ -24,6 +24,13 @@ jobs:
           lipo -create build/calc-arm64 build/calc-x86_64 -output "$APP/Contents/MacOS/Calculator"
           cp mac/Info.plist "$APP/Contents/Info.plist"
           cp index.html "$APP/Contents/Resources/index.html"
+          ICONSET=build/AppIcon.iconset
+          mkdir -p "$ICONSET"
+          for s in 16 32 128 256 512; do
+            sips -z $s $s assets/logo-1024.png --out "$ICONSET/icon_${s}x${s}.png"
+            sips -z $((s*2)) $((s*2)) assets/logo-1024.png --out "$ICONSET/icon_${s}x${s}@2x.png"
+          done
+          iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
           codesign --force --deep --sign - "$APP"
           cd build && ditto -c -k --keepParent Calculator.app Calculator-mac.zip
 
