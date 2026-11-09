@@ -1,0 +1,44 @@
+name: Build Mac app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Calculator.app
+        run: |
+          set -e
+          APP=build/Calculator.app
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+          swiftc -O -swift-version 5 -target arm64-apple-macos11 mac/main.swift -o build/calc-arm64
+          swiftc -O -swift-version 5 -target x86_64-apple-macos11 mac/main.swift -o build/calc-x86_64
+          lipo -create build/calc-arm64 build/calc-x86_64 -output "$APP/Contents/MacOS/Calculator"
+          cp mac/Info.plist "$APP/Contents/Info.plist"
+          cp index.html "$APP/Contents/Resources/index.html"
+          codesign --force --deep --sign - "$APP"
+          cd build && ditto -c -k --keepParent Calculator.app Calculator-mac.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Calculator-mac
+          path: build/Calculator-mac.zip
+
+      - name: Publish to the "Mac app" release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete mac-latest --yes --cleanup-tag || true
+          gh release create mac-latest build/Calculator-mac.zip \
+            --title "Mac app" \
+            --notes "Download Calculator-mac.zip, unzip it, and drag Calculator into Applications. First launch: right-click it and choose Open." \
+            --target "$GITHUB_SHA"
