@@ -200,6 +200,22 @@
   .hidden{
     display:none !important;
   }
+  .pin-btn{
+    border:none;
+    background:transparent;
+    color:var(--text-dim);
+    font-size:14px;
+    cursor:pointer;
+    padding:4px 6px;
+  }
+  .pin-btn:hover{ color:var(--text); }
+  body.in-pip .calc{
+    width:100%;
+    max-width:none;
+    border-radius:0;
+    box-shadow:none;
+  }
+  body.in-pip{ align-items:flex-start; }
 </style>
 </head>
 <body>
@@ -213,6 +229,7 @@
     <div class="deg-rad">
       <button id="degBtn" class="active">DEG</button>
       <button id="radBtn">RAD</button>
+      <button id="pinBtn" class="pin-btn hidden" title="Keep on top of other apps">📌</button>
     </div>
   </div>
 
@@ -704,7 +721,7 @@
     btn.addEventListener('click', () => handleAction(btn.dataset.action));
   });
 
-  window.addEventListener('keydown', (e) => {
+  function onKey(e){
     if (e.key >= '0' && e.key <= '9') inputDigit(e.key);
     else if (e.key === '.') inputDecimal();
     else if (e.key === '+') inputOperator('+');
@@ -718,7 +735,46 @@
     else if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); doEquals(); }
     else if (e.key === 'Escape') allClear();
     else if (e.key === 'Backspace') backspace();
-  });
+  }
+  window.addEventListener('keydown', onKey);
+
+  // ---------- keep on top (Document Picture-in-Picture) ----------
+  // Moves the calculator into a small always-on-top window that stays
+  // visible when you switch to other apps. Close it to put it back.
+  const pinBtn = document.getElementById('pinBtn');
+  const calcEl = document.querySelector('.calc');
+  let pipWin = null;
+
+  async function openPip(){
+    if (pipWin) { pipWin.close(); return; }
+    const w = calcEl.offsetWidth, h = calcEl.offsetHeight;
+    pipWin = await documentPictureInPicture.requestWindow({ width: w, height: h });
+    document.querySelectorAll('style').forEach(st => pipWin.document.head.appendChild(st.cloneNode(true)));
+    pipWin.document.title = 'Calculator';
+    pipWin.document.body.classList.add('in-pip');
+    pipWin.document.body.appendChild(calcEl);
+    pipWin.addEventListener('keydown', onKey);
+    pinBtn.classList.add('active');
+    pipWin.addEventListener('pagehide', () => {
+      document.body.appendChild(calcEl);
+      pinBtn.classList.remove('active');
+      pipWin = null;
+    });
+  }
+
+  function fitPip(){
+    if (!pipWin) return;
+    try {
+      pipWin.resizeTo(pipWin.outerWidth, calcEl.offsetHeight + (pipWin.outerHeight - pipWin.innerHeight));
+    } catch (_) {}
+  }
+
+  if ('documentPictureInPicture' in window) {
+    pinBtn.classList.remove('hidden');
+    pinBtn.addEventListener('click', openPip);
+    modeBasic.addEventListener('click', fitPip);
+    modeSci.addEventListener('click', fitPip);
+  }
 
   updateDisplay();
 })();
