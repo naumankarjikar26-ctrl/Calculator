@@ -229,7 +229,7 @@
     <div class="deg-rad">
       <button id="degBtn" class="active">DEG</button>
       <button id="radBtn">RAD</button>
-      <button id="pinBtn" class="pin-btn hidden" title="Keep on top of other apps">📌</button>
+      <button id="pinBtn" class="pin-btn" title="Keep on top of other apps">📌</button>
     </div>
   </div>
 
@@ -769,8 +769,9 @@
     } catch (_) {}
   }
 
-  if ('documentPictureInPicture' in window) {
-    pinBtn.classList.remove('hidden');
+  if (!('documentPictureInPicture' in window)) {
+    pinBtn.addEventListener('click', () => alert('Keep-on-top needs a recent version of Chrome or Edge on a computer.'));
+  } else {
     pinBtn.addEventListener('click', openPip);
     modeBasic.addEventListener('click', fitPip);
     modeSci.addEventListener('click', fitPip);
